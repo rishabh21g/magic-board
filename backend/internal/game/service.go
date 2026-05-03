@@ -1,1 +1,35 @@
 package game
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/rishabh21g/magic-board/internal/store"
+)
+
+type Service struct {
+	store store.Store
+}
+
+func NewService(store store.Store) *Service {
+	return &Service{
+		store: store,
+	}
+}
+
+func (s *Service) ClaimBlock(ctx context.Context, blockID, userID string) (*Block, error) {
+	success, err := s.store.SetIfEmpty(ctx, blockID, userID)
+	if err != nil {
+		return nil, err
+	}
+	if !success {
+		return nil, fmt.Errorf("block %s is already claimed", blockID)
+	}
+	block := &Block{
+		BlockID:   blockID,
+		OwnerID:   userID,
+		Timestamp: time.Now().Unix(),
+	}
+	return block, nil
+}
