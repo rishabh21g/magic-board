@@ -29,3 +29,25 @@ func (r *RedisStore) SetIfEmpty(ctx context.Context, blockID, userID string) (bo
 	}
 	return ok, nil
 }
+
+// implement the GetOwner method for RedisStore to retrieve the owner of a block
+func (r *RedisStore) GetOwner(ctx context.Context, blockID string) (string, error) {
+	key := "block:" + blockID
+	owner, err := r.client.Get(ctx, key).Result()
+	if err == redis.Nil {
+		return "", nil // block is unclaimed
+	} else if err != nil {
+		return "", errors.New(err.Error())
+	}
+	return owner, nil
+}
+
+// unclaim a block by deleting the key from Redis
+func (r *RedisStore) SetEmpty(ctx context.Context, blockID string) error {
+	key := "block:" + blockID
+	_, err := r.client.Del(ctx, key).Result()
+	if err != nil {
+		return errors.New(err.Error())
+	}
+	return nil
+}
