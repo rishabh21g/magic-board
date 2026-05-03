@@ -20,46 +20,41 @@ func NewRedisStore(client *redis.Client) *RedisStore {
 	}
 }
 
-// implement the SetIfEmpty method for RedisStore if block is not owned by the user
-// function solved the race condition
+// claim if empty: HSETNX grid <blockID> <userID>
 func (r *RedisStore) SetIfEmpty(ctx context.Context, blockID, userID string) (bool, error) {
-	key := "block:" + blockID
-	ok, err := r.client.SetNX(ctx, key, userID, 0).Result()
+	ok, err := r.client.HSetNX(ctx, "grid", blockID, userID).Result()
 	if err != nil {
-		return false, errors.New(err.Error())
+		return false, err
 	}
 	return ok, nil
 }
 
-// implement the GetOwner method for RedisStore to retrieve the owner of a block
+// get owner: HGET grid <blockID>
 func (r *RedisStore) GetOwner(ctx context.Context, blockID string) (string, error) {
-	key := "block:" + blockID
-	owner, err := r.client.Get(ctx, key).Result()
+	owner, err := r.client.HGet(ctx, "grid", blockID).Result()
 	if err == redis.Nil {
-		return "", nil // block is unclaimed
-	} else if err != nil {
-		return "", errors.New(err.Error())
+		return "", nil // unclaimed
+	}
+	if err != nil {
+		return "", err
 	}
 	return owner, nil
 }
 
-// unclaim a block by deleting the key from Redis
+// unclaim: HDEL grid <blockID>
 func (r *RedisStore) SetEmpty(ctx context.Context, blockID string) error {
-	key := "block:" + blockID
-	_, err := r.client.Del(ctx, key).Result()
-	if err != nil {
-		return errors.New(err.Error())
-	}
-	return nil
+	_, err := r.client.HDel(ctx, "grid", blockID).Result()
+	return err
 }
 
 // get entire grid
 func (r *RedisStore) GetAllBlocks(ctx context.Context) ([]*domain.Block, error) {
 	data, err := r.client.HGetAll(ctx, "grid").Result()
+
 	if err != nil {
 		return nil, errors.New(err.Error())
 	}
-	var blocks []*domain.Block
+	blocks := make([]*domain.Block, 0)
 	for blockID, ownerID := range data {
 		blocks = append(blocks, &domain.Block{
 			BlockID:   blockID,

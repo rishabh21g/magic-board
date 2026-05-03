@@ -3,10 +3,12 @@ package ws
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/rishabh21g/magic-board/internal/domain"
 	"github.com/rishabh21g/magic-board/internal/game"
 	"github.com/rishabh21g/magic-board/internal/middleware"
 	"github.com/rishabh21g/magic-board/internal/store"
@@ -17,6 +19,11 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
+}
+
+type wsMessage struct {
+	Type    string          `json:"type"`
+	Payload json.RawMessage `json:"payload"`
 }
 
 // Handler manages WebSocket connections and interactions with the game service
@@ -55,9 +62,19 @@ func (h *Handler) ServeWs(w http.ResponseWriter, r *http.Request) {
 
 // claim block handler
 func (h *Handler) handleClaimBlock(payload json.RawMessage) {
+	fmt.Printf("Received claim block request: %s\n", string(payload))
+	var msg wsMessage
+	if err := json.Unmarshal(payload, &msg); err != nil {
+		log.Printf("Failed to unmarshal claim block event: %v", err)
+		return
+	}
+
+	if msg.Type != "CLAIM_BLOCK" {
+		return
+	}
+
 	var data game.ClaimBlockEvent
-	err := json.Unmarshal(payload, &data)
-	if err != nil {
+	if err := json.Unmarshal(msg.Payload, &data); err != nil {
 		log.Printf("Failed to unmarshal claim block event: %v", err)
 		return
 	}
@@ -72,24 +89,29 @@ func (h *Handler) handleClaimBlock(payload json.RawMessage) {
 		log.Printf("Failed to claim block: %v", err)
 		return
 	}
+
+	h.broadcastBlockUpdate(block)
+}
+
+// broadcastBlockUpdate broadcasts a block update to all connected clients
+func (h *Handler) broadcastBlockUpdate(block *domain.Block) {
 	response := map[string]interface{}{
-		"type": "block_claimed",
-		"data": block,
+		"type":    "BLOCK_UPDATED",
+		"payload": block,
 	}
 	msg, err := json.Marshal(response)
 	if err != nil {
-		log.Printf("Failed to marshal response: %v", err)
+		log.Printf("Failed to marshal block update response: %v", err)
 		return
 	}
-
 	h.hub.broadcast <- msg
 }
 
 // sendRateLimitExceeded sends a message to the client indicating that they have exceeded the rate limit
 func (h *Handler) sendRateLimitExceeded(userID string) {
 	response := map[string]interface{}{
-		"type": "rate_limit_exceeded",
-		"data": map[string]string{
+		"type": "RATE_LIMIT_EXCEEDED",
+		"payload": map[string]string{
 			"user_id": userID,
 			"message": "You have exceeded the rate limit. Please try again later.",
 		},
@@ -111,8 +133,8 @@ func (h *Handler) getInitialGridState(c *Client) {
 		return
 	}
 	response := map[string]interface{}{
-		"type": "initial_grid_state",
-		"data": grid,
+		"type":    "INIT_STATE",
+		"payload": grid,
 	}
 	msg, err := json.Marshal(response)
 	if err != nil {

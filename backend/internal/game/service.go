@@ -21,6 +21,7 @@ func NewService(store store.Store) *Service {
 
 func (s *Service) ClaimBlock(ctx context.Context, blockID, userID string) (*domain.Block, error) {
 	success, err := s.store.SetIfEmpty(ctx, blockID, userID)
+	fmt.Printf("Attempting to claim block %s for user %s: success=%v, error=%v\n", blockID, userID, success, err)
 	if err != nil {
 		return nil, err
 	}
