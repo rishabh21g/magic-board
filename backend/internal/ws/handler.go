@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/rishabh21g/magic-board/internal/game"
 	"github.com/rishabh21g/magic-board/internal/middleware"
+	"github.com/rishabh21g/magic-board/internal/store"
 )
 
 // upgrader is used to upgrade HTTP connections to WebSocket connections
@@ -23,14 +24,16 @@ type Handler struct {
 	hub         *Hub
 	gameService *game.Service
 	rateLimiter *middleware.RateLimiter
+	store       store.Store
 }
 
 // constructor function NewHandler initializes a new Handler instance with the provided Hub and game Service
-func NewHandler(h *Hub, g *game.Service, rl *middleware.RateLimiter) *Handler {
+func NewHandler(h *Hub, g *game.Service, rl *middleware.RateLimiter, s store.Store) *Handler {
 	return &Handler{
 		hub:         h,
 		gameService: g,
 		rateLimiter: rl,
+		store:       s, // type assertion to access Redis client
 	}
 }
 
@@ -45,6 +48,7 @@ func (h *Handler) ServeWs(w http.ResponseWriter, r *http.Request) {
 	h.hub.register <- client
 
 	// start goroutines to read from and write to the client
+	go h.getInitialGridState(client)
 	go client.WritePump()
 	go client.ReadPump(h)
 }
@@ -96,4 +100,24 @@ func (h *Handler) sendRateLimitExceeded(userID string) {
 		return
 	}
 	h.hub.broadcast <- msg
+}
+
+// sendGridState sends the current state of the grid to all connected clients
+func (h *Handler) getInitialGridState(c *Client) {
+	var ctx = context.Background()
+	grid, err := h.store.GetAllBlocks(ctx)
+	if err != nil {
+		log.Printf("Failed to get grid state: %v", err)
+		return
+	}
+	response := map[string]interface{}{
+		"type": "initial_grid_state",
+		"data": grid,
+	}
+	msg, err := json.Marshal(response)
+	if err != nil {
+		log.Printf("Failed to marshal initial grid state response: %v", err)
+		return
+	}
+	c.send <- msg
 }
