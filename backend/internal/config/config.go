@@ -10,6 +10,6 @@ type Config struct {
 func LoadConfig() *Config {
 	return &Config{
 		Port:         utils.GetEnv("PORT", "8080"),
-		RedisAddress: utils.GetEnv("REDIS_ADDRESS", "localhost:6379"),
+		RedisAddress: utils.GetEnv("REDIS_ADDR", "localhost:6379"),
 	}
 }
