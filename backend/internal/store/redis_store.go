@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/rishabh21g/magic-board/internal/domain"
 )
 
 // create a RedisStore struct that implements the Store interface
@@ -50,4 +51,21 @@ func (r *RedisStore) SetEmpty(ctx context.Context, blockID string) error {
 		return errors.New(err.Error())
 	}
 	return nil
+}
+
+// get entire grid
+func (r *RedisStore) GetAllBlocks(ctx context.Context) ([]*domain.Block, error) {
+	data, err := r.client.HGetAll(ctx, "grid").Result()
+	if err != nil {
+		return nil, errors.New(err.Error())
+	}
+	var blocks []*domain.Block
+	for blockID, ownerID := range data {
+		blocks = append(blocks, &domain.Block{
+			BlockID:   blockID,
+			OwnerID:   ownerID,
+			Timestamp: 0,
+		})
+	}
+	return blocks, nil
 }

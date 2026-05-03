@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/rishabh21g/magic-board/internal/domain"
 	"github.com/rishabh21g/magic-board/internal/store"
 )
 
@@ -18,7 +19,7 @@ func NewService(store store.Store) *Service {
 	}
 }
 
-func (s *Service) ClaimBlock(ctx context.Context, blockID, userID string) (*Block, error) {
+func (s *Service) ClaimBlock(ctx context.Context, blockID, userID string) (*domain.Block, error) {
 	success, err := s.store.SetIfEmpty(ctx, blockID, userID)
 	if err != nil {
 		return nil, err
@@ -26,7 +27,7 @@ func (s *Service) ClaimBlock(ctx context.Context, blockID, userID string) (*Bloc
 	if !success {
 		return nil, fmt.Errorf("block %s is already claimed", blockID)
 	}
-	block := &Block{
+	block := &domain.Block{
 		BlockID:   blockID,
 		OwnerID:   userID,
 		Timestamp: time.Now().Unix(),
