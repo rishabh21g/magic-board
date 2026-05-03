@@ -2,19 +2,19 @@ package ws
 
 // Hub maintains the set of active clients and broadcasts messages to the clients
 type Hub struct {
-	clients   map[*Client]bool
-	broadcast chan []byte
-	register  chan *Client
-	ungister  chan *Client
+	clients    map[*Client]bool
+	broadcast  chan []byte
+	register   chan *Client
+	unregister chan *Client
 }
 
 // constructor function NewHub initializes a new Hub instance
 func NewHub() *Hub {
 	return &Hub{
-		clients:   make(map[*Client]bool),
-		broadcast: make(chan []byte),
-		register:  make(chan *Client),
-		ungister:  make(chan *Client),
+		clients:    make(map[*Client]bool),
+		broadcast:  make(chan []byte),
+		register:   make(chan *Client),
+		unregister: make(chan *Client),
 	}
 }
 
@@ -24,7 +24,7 @@ func (h *Hub) Run() {
 		select {
 		case client := <-h.register:
 			h.clients[client] = true
-		case client := <-h.ungister:
+		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
 				close(client.send)
