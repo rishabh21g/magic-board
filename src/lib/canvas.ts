@@ -1,4 +1,4 @@
-import { CELL_GAP, CELL_SIZE, COLORS, COLS, RIVAL_PALETTE, ROWS, STRIDE } from "../constants/GRID"
+import { CELL_GAP, CELL_SIZE, COLORS, COLS, RIVAL_PALETTE, ROWS, STRIDE } from "../constants/grid"
 
 
 export function getUserColor(userID: string, myUserID: string, userColorMap: Map<string, string>): string {

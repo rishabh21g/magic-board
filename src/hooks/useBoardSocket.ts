@@ -1,11 +1,24 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ws } from "../lib/ws";
+import { ws } from "../lib/ws"
 
-type Block = { blockID: string; userID: string; timestamp: number }
-type LeaderboardEntry = { userID: string; count: number }
+export type Block = { blockID: string; userID: string; timestamp: number }
+export type LeaderboardEntry = { userID: string; count: number }
+
+export type UserInfo = {
+  username: string
+  color: string
+}
+
+export type UsersById = Record<string, UserInfo>
+
+type InitStatePayload = {
+  grid: Block[]
+  leaderboard: LeaderboardEntry[]
+  users: UsersById
+}
 
 type ServerMessage =
-  | { type: "INIT_STATE"; payload: { grid: Block[]; leaderboard: LeaderboardEntry[] } }
+  | { type: "INIT_STATE"; payload: InitStatePayload }
   | { type: "BLOCK_UPDATED"; payload: Block }
   | { type: "LEADERBOARD_UPDATE"; payload: LeaderboardEntry[] }
   | { type: "RATE_LIMIT_EXCEEDED"; payload: { user_id: string; message: string } }
@@ -23,6 +36,7 @@ export function useBoardSocket() {
 
   const [blocksById, setBlocksById] = useState<Record<string, Block>>({})
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
+  const [usersById, setUsersById] = useState<UsersById>({})
   const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null)
 
   const claimCell = useCallback((blockID: string, userID: string) => {
@@ -53,6 +67,7 @@ export function useBoardSocket() {
         case "INIT_STATE":
           setBlocksById(toBlocksById(msg.payload.grid))
           setLeaderboard(msg.payload.leaderboard)
+          setUsersById(msg.payload.users)
           return
 
         case "BLOCK_UPDATED":
@@ -72,5 +87,5 @@ export function useBoardSocket() {
     return () => ws.close()
   }, [])
 
-  return { status, blocksById, leaderboard, rateLimitMessage, claimCell , ws }
+  return { status, blocksById, leaderboard, usersById, rateLimitMessage, claimCell, ws }
 }
