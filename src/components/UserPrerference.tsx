@@ -16,7 +16,9 @@ import { Field, FieldGroup } from "./ui/field"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 
-export function UserPreferenceDialog() {
+export function UserPreferenceDialog(props: {
+  onProfileUpdated?: (userID: string, username: string, color: string) => void
+}) {
   const { userName, setUserName, userColor, setUserColor, userID } = useUser()
 
   const [draftName, setDraftName] = useState(userName)
@@ -27,9 +29,16 @@ export function UserPreferenceDialog() {
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setUserName(draftName.trim())
-    setUserColor(draftColor.trim())
+    const username = draftName.trim()
+    const color = draftColor.trim()
+
+    setUserName(username)
+    setUserColor(color)
+
+    props.onProfileUpdated?.(userID, username, color)
   }
+
+  const safeColor = /^#([0-9a-fA-F]{6})$/.test(draftColor) ? draftColor : "#22c55e"
 
   return (
     <Dialog>
@@ -59,12 +68,21 @@ export function UserPreferenceDialog() {
 
             <Field>
               <Label htmlFor="color">Color (hex)</Label>
-              <Input
-                id="color"
-                value={draftColor}
-                onChange={(e) => setDraftColor(e.target.value)}
-                placeholder="#c8a84b"
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  aria-label="Pick color"
+                  type="color"
+                  value={safeColor}
+                  onChange={(e) => setDraftColor(e.target.value)}
+                  className="h-10 w-12 p-1"
+                />
+                <Input
+                  id="color"
+                  value={draftColor}
+                  onChange={(e) => setDraftColor(e.target.value)}
+                  placeholder="#c8a84b"
+                />
+              </div>
             </Field>
           </FieldGroup>
 

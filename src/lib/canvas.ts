@@ -1,31 +1,36 @@
-import { CELL_GAP, CELL_SIZE, COLORS, COLS, RIVAL_PALETTE, ROWS, STRIDE } from "../constants/grid"
+import { CELL_GAP, CELL_SIZE, COLORS, COLS, ROWS, STRIDE } from "../constants/grid"
+import type { UsersById } from "../hooks/useBoardSocket"
 
+const FALLBACK_OWNED = "#22c55e"
+function normalizeHexColor(maybe: string | undefined) {
+  const c = (maybe ?? "").trim()
+  return /^#([0-9a-fA-F]{6})$/.test(c) ? c : ""
+}
 
-export function getUserColor(userID: string, myUserID: string, userColorMap: Map<string, string>): string {
-  if (userID === myUserID) return COLORS.gold
-  if (!userColorMap.has(userID)) {
-    const idx = userColorMap.size % RIVAL_PALETTE.length
-    userColorMap.set(userID, RIVAL_PALETTE[idx])
-  }
-  return userColorMap.get(userID)!
+export function getUserColor(userID: string, usersById: UsersById): string {
+  const explicit = normalizeHexColor(usersById[userID]?.color)
+  return explicit || FALLBACK_OWNED
 }
 
 export function drawGrid(
   ctx: CanvasRenderingContext2D,
   blocksById: Record<string, { blockID: string; userID: string; timestamp: number }>,
+  usersById: UsersById,
   myUserID: string,
-  userColorMap: Map<string, string>,
   hoveredCell: { row: number; col: number } | null,
-  flashCells: Set<string>,
   dpr: number
 ) {
+  // (recommended) set transform once
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+
+  // then use W/H in CSS units
   const W = COLS * STRIDE - CELL_GAP
   const H = ROWS * STRIDE - CELL_GAP
-  ctx.clearRect(0, 0, W * dpr, H * dpr)
+  ctx.clearRect(0, 0, W, H)
 
   // Background
   ctx.fillStyle = COLORS.surface
-  ctx.fillRect(0, 0, W * dpr, H * dpr)
+  ctx.fillRect(0, 0, W, H)
 
   for (let row = 0; row < ROWS; row++) {
     for (let col = 0; col < COLS; col++) {
@@ -36,10 +41,10 @@ export function drawGrid(
       const cellKey = `${row},${col}`
       const block = blocksById[cellKey]
       const isHovered = hoveredCell?.row === row && hoveredCell?.col === col
-      const isFlash = flashCells.has(cellKey)
+      const isFlash = false
 
       if (block) {
-        const color = getUserColor(block.userID, myUserID, userColorMap)
+        const color = getUserColor(block.userID, usersById)
         const isMe = block.userID === myUserID
 
         // Fill

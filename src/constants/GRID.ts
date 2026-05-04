@@ -2,7 +2,7 @@ export const CELL_SIZE = 50
 export const CELL_GAP = 10
 export const STRIDE = CELL_SIZE + CELL_GAP
 export const COLS = 10
-export const ROWS = 10
+export const ROWS = 20
 
 // Theme colors 
 export const COLORS = {
