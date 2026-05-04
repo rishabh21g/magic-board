@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Crown } from "lucide-react";
+import { useBoardSocket } from "../hooks/useBoardSocket";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -8,22 +9,12 @@ export interface Player {
   rank: number;
   name: string;
   cells: number;
-  color: string;
   crown?: boolean;
-}
-
-interface WsMessage {
-  players?: Player[];
-}
-
-export interface LeaderboardProps {
-  wsUrl?: string;
 }
 
 interface LeaderboardRowProps {
   player: Player;
   index: number;
-  isPulsing: boolean;
   maxCells: number;
 }
 
@@ -33,26 +24,16 @@ const CINZEL: React.CSSProperties = { fontFamily: "'Cinzel', serif" };
 const MAX_CELLS = 500;
 const RANK_MEDALS: string[] = ["🥇", "🥈", "🥉"];
 
-const SEED_DATA: Player[] = [
-  { rank: 1, name: "DarkKnight",  cells: 248, color: "#c8a84b", crown: true },
-  { rank: 2, name: "ShadowMage",  cells: 201, color: "#818cf8" },
-  { rank: 3, name: "IronWarden",  cells: 188, color: "#e85d04" },
-  { rank: 4, name: "StormCaller", cells: 142, color: "#4ade80" },
-  { rank: 5, name: "VoidHunter",  cells: 118, color: "#f472b6" },
-  { rank: 6, name: "RuneSeeker",  cells: 97,  color: "#38bdf8" },
-  { rank: 7, name: "GoldReaper",  cells: 74,  color: "#fb923c" },
-  { rank: 8, name: "AshBlade",    cells: 53,  color: "#a3e635" },
-];
+
 
 // ─── LeaderboardRow ───────────────────────────────────────────────────────────
 
 const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
   player,
   index,
-  isPulsing,
   maxCells,
 }) => {
-  const { rank, name, cells, color, crown } = player;
+  const { rank, name, cells, crown } = player;
   const barPct = Math.min((cells / maxCells) * 100, 100);
 
   return (
@@ -62,9 +43,6 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
       animate={{
         opacity: 1,
         x: 0,
-        backgroundColor: isPulsing
-          ? "rgba(200,168,75,0.08)"
-          : "rgba(0,0,0,0)",
       }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4, layout: { duration: 0.4 } }}
@@ -87,8 +65,7 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
       {/* Name + avatar */}
       <div className="flex items-center gap-3">
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-[#0d0a00] font-black text-sm flex-shrink-0"
-          style={{ backgroundColor: color }}
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-[#0d0a00] font-black text-sm bg-[#c8a84b]"
         >
           {name[0]}
         </div>
@@ -121,10 +98,7 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
             initial={{ width: 0 }}
             animate={{ width: `${barPct}%` }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            style={{
-              background: `linear-gradient(90deg, ${color}88, ${color})`,
-              boxShadow: `0 0 8px ${color}66`,
-            }}
+           
           />
         </div>
       </div>
@@ -157,53 +131,19 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
 
 // ─── Leaderboard ──────────────────────────────────────────────────────────────
 
-/**
- * Leaderboard — Live ranking table.
- *
- * Pass `wsUrl` to connect to your WebSocket server.
- * Expected message shape: `{ players: Player[] }`
- * Falls back to seed data when no wsUrl is provided.
- */
-const Leaderboard: React.FC<LeaderboardProps> = ({ wsUrl }) => {
-  const [players, setPlayers] = useState<Player[]>(SEED_DATA);
-  const [pulse, setPulse] = useState<string | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
+const Leaderboard: React.FC = () => {
+  const { leaderboard } = useBoardSocket();
 
-  const handleMessage = useCallback(
-    (prev: Player[], next: Player[]): Player[] => {
-      const changed = next.find((p, i) => prev[i]?.cells !== p.cells);
-      if (changed) setPulse(changed.name);
-      return next;
-    },
-    []
-  );
-
-  useEffect(() => {
-    if (!wsUrl) return;
-
-    wsRef.current = new WebSocket(wsUrl);
-    wsRef.current.onmessage = (e: MessageEvent<string>) => {
-      try {
-        const data: WsMessage = JSON.parse(e.data);
-        if (data.players) {
-          setPlayers((prev) => handleMessage(prev, data.players!));
-        }
-      } catch {
-        // Silently ignore malformed frames
-      }
-    };
-
-    return () => {
-      wsRef.current?.close();
-    };
-  }, [wsUrl, handleMessage]);
-
-  // Clear pulse highlight after animation completes
-  useEffect(() => {
-    if (!pulse) return;
-    const timer = setTimeout(() => setPulse(null), 1200);
-    return () => clearTimeout(timer);
-  }, [pulse]);
+  const players = useMemo((): Player[] => {
+    return leaderboard
+      .sort((a, b) => b.count - a.count)
+      .map((entry, index) => ({
+        rank: index + 1,
+        name: entry.userID.slice(0, 8), 
+        cells: entry.count,
+        crown: index === 0,
+      }));
+  }, [leaderboard]);
 
   return (
     <section id="leaderboard" className="relative py-24 px-4">
@@ -276,7 +216,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ wsUrl }) => {
                 key={player.name}
                 player={player}
                 index={i}
-                isPulsing={pulse === player.name}
                 maxCells={MAX_CELLS}
               />
             ))}

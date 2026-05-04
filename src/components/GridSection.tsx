@@ -24,12 +24,6 @@ const CornerRune: React.FC<CornerRuneProps> = ({ className = "" }) => (
 );
 
 // ─── GridSection ──────────────────────────────────────────────────────────────
-
-/**
- * GridSection — Apple-outlet–style glass enclosure around MagicGrid.
- * Provides ambient glow rings, chrome top/bottom bars, corner runes,
- * and a live-status indicator.
- */
 const GridSection: React.FC = () => (
   <section id="arena" className="relative py-24 px-4">
     {/* Section heading */}
@@ -70,8 +64,8 @@ const GridSection: React.FC = () => (
       className="relative max-w-4xl mx-auto"
     >
       {/* Outer glow layers */}
-      <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-[#c8a84b]/20 via-[#e85d04]/10 to-[#c8a84b]/20 blur-2xl pointer-events-none" />
-      <div className="absolute -inset-2 rounded-2xl bg-gradient-to-br from-[#c8a84b]/10 to-[#e85d04]/5 blur-md pointer-events-none" />
+      <div className="absolute -inset-4 rounded-3xl bg-linear-to-br from-[#c8a84b]/20 via-[#e85d04]/10 to-[#c8a84b]/20 blur-2xl pointer-events-none" />
+      <div className="absolute -inset-2 rounded-2xl bg-linear-to-br from-[#c8a84b]/10 to-[#e85d04]/5 blur-md pointer-events-none" />
 
       {/* Glass container */}
       <div className="relative rounded-2xl border border-[#c8a84b]/30 bg-[#0d0a00]/80 backdrop-blur-xl overflow-hidden shadow-[0_0_80px_rgba(200,168,75,0.15),0_0_0_1px_rgba(200,168,75,0.1)]">
@@ -106,16 +100,11 @@ const GridSection: React.FC = () => (
         </div>
 
         {/* Canvas area */}
-        <div className="relative p-4 md:p-6">
+        <div className="relative p-4 md:p-6 flex justify-center">
           <CornerRune className="top-2 left-2" />
           <CornerRune className="top-2 right-2 scale-x-[-1]" />
           <CornerRune className="bottom-2 left-2 scale-y-[-1]" />
           <CornerRune className="bottom-2 right-2 scale-x-[-1] scale-y-[-1]" />
-
-          {/*
-           * MagicGrid is rendered here.
-           * Replace components/MagicGrid.tsx with your real canvas component.
-           */}
           <MagicGrid />
         </div>
 

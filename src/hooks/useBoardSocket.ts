@@ -1,67 +1,76 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { ws } from "../lib/ws";
 
+type Block = { blockID: string; userID: string; timestamp: number }
+type LeaderboardEntry = { userID: string; count: number }
 
+type ServerMessage =
+  | { type: "INIT_STATE"; payload: { grid: Block[]; leaderboard: LeaderboardEntry[] } }
+  | { type: "BLOCK_UPDATED"; payload: Block }
+  | { type: "LEADERBOARD_UPDATE"; payload: LeaderboardEntry[] }
+  | { type: "RATE_LIMIT_EXCEEDED"; payload: { user_id: string; message: string } }
+
+function toBlocksById(grid: Block[]) {
+  const map: Record<string, Block> = {}
+  for (const b of grid) map[b.blockID] = b
+  return map
+}
 
 export function useBoardSocket() {
   const wsRef = useRef<WebSocket | null>(null)
 
   const [status, setStatus] = useState<"connecting" | "connected" | "disconnected">("connecting")
 
-  // WS  Initialization and event handling
-  async function InitializeWebSocket() {
-    const ws = new WebSocket("ws://localhost:8080/ws")
-    wsRef.current = ws
-    try {
-      ws.onopen = () => setStatus("connected")
-      setStatus("connecting")
-      ws.onmessage = (e) => {
-        const msg = JSON.parse(e.data)
-        console.log(msg)
+  const [blocksById, setBlocksById] = useState<Record<string, Block>>({})
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
+  const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null)
 
-        switch (msg.type) {
-          case "INIT_STATE":
-            console.log(msg)
-            break
-
-          case "BLOCK_UPDATED": {
-            console.log(msg)
-            break
-          }
-
-          case "RATE_LIMIT_EXCEEDED": {
-            console.log(msg)
-            break
-          }
-          case "LEADERBOARD_UPDATED": {
-            console.log(msg)
-            break
-          }
-          default:
-            break
-        }
-      }
-
-    } catch (e) {
-      ws.onerror = () => setStatus("disconnected")
-      console.error("Failed to initialize WebSocket:", e)
-    } finally {
-      setStatus("disconnected")
-      ws.onclose = () => setStatus("disconnected")
-    }
-
-  }
-
-  // Initialize WebSocket on component mount and clean up on unmount
-  useEffect(() => {
-    InitializeWebSocket()
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close()
-      }
-    }
+  const claimCell = useCallback((blockID: string, userID: string) => {
+    const ws = wsRef.current
+    if (!ws || ws.readyState !== WebSocket.OPEN) return
+    ws.send(JSON.stringify({ type: "CLAIM_BLOCK", payload: { blockID, userID } }))
   }, [])
 
+  useEffect(() => {
+    setStatus("connecting")
+    wsRef.current = ws
 
+    ws.onopen = () => setStatus("connected")
+    ws.onclose = () => setStatus("disconnected")
+    ws.onerror = () => setStatus("disconnected")
 
-  return null
+    ws.onmessage = (e) => {
+      let msg: ServerMessage
+      try {
+        msg = JSON.parse(e.data)
+        console.log(msg)
+      } catch (e) {
+        console.error("Failed to parse WebSocket message:", e)
+        return
+      }
+      console.log(msg)
+      switch (msg.type) {
+        case "INIT_STATE":
+          setBlocksById(toBlocksById(msg.payload.grid))
+          setLeaderboard(msg.payload.leaderboard)
+          return
+
+        case "BLOCK_UPDATED":
+          setBlocksById((prev) => ({ ...prev, [msg.payload.blockID]: msg.payload }))
+          return
+
+        case "LEADERBOARD_UPDATE":
+          setLeaderboard(msg.payload)
+          return
+
+        case "RATE_LIMIT_EXCEEDED":
+          setRateLimitMessage(msg.payload.message)
+          return
+      }
+    }
+
+    return () => ws.close()
+  }, [])
+
+  return { status, blocksById, leaderboard, rateLimitMessage, claimCell , ws }
 }

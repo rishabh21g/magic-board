@@ -71,8 +71,8 @@ const Hero: React.FC = () => (
   <section className="relative min-h-screen flex flex-col items-center justify-center pt-16 pb-24 overflow-hidden">
     {/* Radial glow */}
     <div className="absolute inset-0 pointer-events-none">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[600px] rounded-full bg-[#c8a84b]/[0.08] blur-[120px]" />
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[300px] rounded-full bg-[#e85d04]/10 blur-[80px]" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-225 h-150 rounded-full bg-[#c8a84b]/8 blur-[120px]" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-100 h-75 rounded-full bg-[#e85d04]/10 blur-[80px]" />
     </div>
 
     {/* Ember particles */}
@@ -125,9 +125,9 @@ const Hero: React.FC = () => (
         transition={{ duration: 0.8, delay: 0.6 }}
         className="flex items-center justify-center gap-3 my-5"
       >
-        <div className="h-px w-24 bg-gradient-to-r from-transparent to-[#c8a84b]/60" />
+        <div className="h-px w-24 bg-linear-to-r from-transparent to-[#c8a84b]/60" />
         <div className="w-2 h-2 rotate-45 bg-[#c8a84b]" />
-        <div className="h-px w-24 bg-gradient-to-l from-transparent to-[#c8a84b]/60" />
+        <div className="h-px w-24 bg-linear-to-l from-transparent to-[#c8a84b]/60" />
       </motion.div>
 
       {/* Sub-headlines */}
@@ -179,7 +179,7 @@ const Hero: React.FC = () => (
           href="#arena"
           whileHover={{ scale: 1.04, boxShadow: "0 0 40px rgba(200,168,75,0.5)" }}
           whileTap={{ scale: 0.97 }}
-          className="px-8 py-4 rounded-xl font-bold text-base tracking-widest uppercase text-[#0d0a00] bg-gradient-to-b from-[#f0c040] via-[#c8a84b] to-[#8b5e0a] border border-[#f0c040]/60 shadow-[0_0_24px_rgba(200,168,75,0.3)] transition-all duration-200 cursor-pointer"
+          className="px-8 py-4 rounded-xl font-bold text-base tracking-widest uppercase text-[#0d0a00] bg-linear-to-b from-[#f0c040] via-[#c8a84b] to-[#8b5e0a] border border-[#f0c040]/60 shadow-[0_0_24px_rgba(200,168,75,0.3)] transition-all duration-200 cursor-pointer"
           style={CINZEL}
         >
           ⚔ Enter the Arena
@@ -208,7 +208,7 @@ const Hero: React.FC = () => (
       <motion.div
         animate={{ y: [0, 6, 0] }}
         transition={{ duration: 1.5, repeat: Infinity }}
-        className="w-0.5 h-6 bg-gradient-to-b from-[#c8a84b]/40 to-transparent rounded-full"
+        className="w-0.5 h-6 bg-linear-to-b from-[#c8a84b]/40 to-transparent rounded-full"
       />
     </motion.div>
   </section>
