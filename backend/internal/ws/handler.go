@@ -21,11 +21,6 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-type wsMessage struct {
-	Type    string          `json:"type"`
-	Payload json.RawMessage `json:"payload"`
-}
-
 // Handler manages WebSocket connections and interactions with the game service
 type Handler struct {
 	hub         *Hub
@@ -40,7 +35,7 @@ func NewHandler(h *Hub, g *game.Service, rl *middleware.RateLimiter, s store.Sto
 		hub:         h,
 		gameService: g,
 		rateLimiter: rl,
-		store:       s, // type assertion to access Redis client
+		store:       s,
 	}
 }
 
@@ -63,7 +58,7 @@ func (h *Handler) ServeWs(w http.ResponseWriter, r *http.Request) {
 // claim block handler
 func (h *Handler) handleClaimBlock(payload json.RawMessage) {
 	fmt.Printf("Received claim block request: %s\n", string(payload))
-	var msg wsMessage
+	var msg domain.Message
 	if err := json.Unmarshal(payload, &msg); err != nil {
 		log.Printf("Failed to unmarshal claim block event: %v", err)
 		return
@@ -91,6 +86,7 @@ func (h *Handler) handleClaimBlock(payload json.RawMessage) {
 	}
 
 	h.broadcastBlockUpdate(block)
+	h.broadcastLeaderboard()
 }
 
 // broadcastBlockUpdate broadcasts a block update to all connected clients
@@ -128,13 +124,17 @@ func (h *Handler) sendRateLimitExceeded(userID string) {
 func (h *Handler) getInitialGridState(c *Client) {
 	var ctx = context.Background()
 	grid, err := h.store.GetAllBlocks(ctx)
+	leaderboard, err := h.store.GetLeaderBoard(ctx)
 	if err != nil {
 		log.Printf("Failed to get grid state: %v", err)
 		return
 	}
 	response := map[string]interface{}{
-		"type":    "INIT_STATE",
-		"payload": grid,
+		"type": "INIT_STATE",
+		"payload": map[string]interface{}{
+			"grid":        grid,
+			"leaderboard": leaderboard,
+		},
 	}
 	msg, err := json.Marshal(response)
 	if err != nil {
@@ -142,4 +142,24 @@ func (h *Handler) getInitialGridState(c *Client) {
 		return
 	}
 	c.send <- msg
+}
+
+// broadcastLeaderboard retrieves the current leaderboard from the store and broadcasts it to all connected clients
+func (h *Handler) broadcastLeaderboard() {
+	var ctx = context.Background()
+	leaderboard, err := h.store.GetLeaderBoard(ctx)
+	if err != nil {
+		log.Printf("Failed to get leaderboard: %v", err)
+		return
+	}
+	response := map[string]interface{}{
+		"type":    "LEADERBOARD_UPDATE",
+		"payload": leaderboard,
+	}
+	msg, err := json.Marshal(response)
+	if err != nil {
+		log.Printf("Failed to marshal leaderboard response: %v", err)
+		return
+	}
+	h.hub.broadcast <- msg
 }

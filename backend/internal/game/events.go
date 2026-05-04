@@ -6,6 +6,6 @@ type ClaimBlockEvent struct {
 }
 
 type UnclaimBlockEvent struct {
-	BlockID string `json:"id"`
-	UserID  string `json:"user_id"`
+	BlockID string `json:"blockID"`
+	UserID  string `json:"userID"`
 }

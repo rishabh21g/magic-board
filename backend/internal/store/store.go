@@ -7,8 +7,9 @@ import (
 )
 
 type Store interface {
-	SetIfEmpty(ctx context.Context, blockID, userID string) (bool, error)
-	SetEmpty(ctx context.Context, blockID string) error
+	ClaimBlock(ctx context.Context, blockID, userID string) (bool, error)
 	GetOwner(ctx context.Context, blockID string) (string, error)
 	GetAllBlocks(ctx context.Context) ([]*domain.Block, error)
+	UnclaimBlock(ctx context.Context, blockID string) (bool, error)
+	GetLeaderBoard(ctx context.Context) ([]*domain.LeaderboardEntry, error)
 }
