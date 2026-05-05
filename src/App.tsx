@@ -10,7 +10,7 @@ import MagicData from "./components/MagicData"
 export default function App() {
 
   const board = useBoardSocket()
-  const CLICK_SOUND = "public/mouse-click.mp3"
+  const CLICK_SOUND = "mouse-click.mp3"
   let clickSound: HTMLAudioElement | null = null
 
   function getClickSound() {
