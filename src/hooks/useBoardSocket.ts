@@ -67,6 +67,7 @@ export function useBoardSocket(wsUrl: string = WS_URL) {
     }
 
     socket.onmessage = (e) => {
+      console.log(e)
       let msg: ServerMessage
       try {
         msg = JSON.parse(e.data)
@@ -110,7 +111,9 @@ export function useBoardSocket(wsUrl: string = WS_URL) {
     }
 
     socket.onerror = () => {
-      try { socket.close() } catch {}
+      try { socket.close() } catch (e){
+  console.log(e)
+      }
     }
 
     socket.onclose = () => {
@@ -121,6 +124,7 @@ export function useBoardSocket(wsUrl: string = WS_URL) {
 
   useEffect(() => {
     shouldReconnectRef.current = true
+    console.log("Connecting to WebSocket..." , import.meta.env.VITE_WS_URL )
     connect()
 
     return () => {

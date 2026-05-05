@@ -11,7 +11,6 @@ export default function App() {
 
   const board = useBoardSocket()
   const CLICK_SOUND = "public/mouse-click.mp3"
-  console.log(CLICK_SOUND)
   let clickSound: HTMLAudioElement | null = null
 
   function getClickSound() {
