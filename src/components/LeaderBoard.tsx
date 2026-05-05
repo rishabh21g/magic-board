@@ -1,8 +1,8 @@
-import { useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import type { LeaderboardEntry, UsersById } from "../hooks/useBoardSocket"
 import { getUserColor } from "../lib/canvas"
 import { useUser } from "../../Context/UserContext"
+import { Separator } from "./ui/separator"
 
 type Props = {
   status: "connecting" | "connected" | "disconnected"
@@ -11,18 +11,15 @@ type Props = {
 }
 
 export default function LeaderBoard({ status, leaderboard, usersById }: Props) {
-  const { userID } = useUser()
-
-  const rows = useMemo(() => {
-    return [...leaderboard].sort((a, b) => b.count - a.count)
-  }, [leaderboard])
+  const { userID, userName } = useUser()
+  const rows = leaderboard
 
   return (
-    <Card className="w-[320px] shrink-0">
+    <Card className="w-80 h-fit py-9 space-y-3 shrink-0">
       <CardHeader className="border-b">
         <CardTitle>Leaderboard</CardTitle>
         <CardDescription>
-          Status: {status}
+          Status: {status} <Separator orientation="horizontal" className="h-6 my-2" /> You: {userName}
         </CardDescription>
       </CardHeader>
 

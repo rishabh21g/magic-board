@@ -1,16 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import type { Block, UsersById } from "../hooks/useBoardSocket"
 import { drawGrid } from "../lib/canvas"
-import { CELL_GAP, CELL_SIZE, COLS, ROWS, STRIDE } from "../constants/grid"
+import {CELL_SIZE, COLS, ROWS, STRIDE } from "../constants/grid"
 import { useUser } from "../../Context/UserContext"
 
 type Props = {
   status: "connecting" | "connected" | "disconnected"
   blocksById: Record<string, Block>
   usersById: UsersById
-  claimCell: (blockID: string, userID: string) => void
+  claimCell: (blockID: string, userID: string , userName:string , userColor:string) => void
 }
 
 function getCellFromPoint(x: number, y: number) {
@@ -26,27 +25,40 @@ function getCellFromPoint(x: number, y: number) {
 }
 
 export default function MagicBoard({ status, blocksById, usersById, claimCell }: Props) {
-  const { userID } = useUser()
+  const { userID , userColor , userName } = useUser()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const hoveredCellRef = useRef<{ row: number; col: number } | null>(null)
   const lastHoverKeyRef = useRef<string | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const [size, setSize] = useState({ w: 0, h: 0 })
 
-  const canvasW = useMemo(() => COLS * STRIDE - CELL_GAP, [])
-  const canvasH = useMemo(() => ROWS * STRIDE - CELL_GAP, [])
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+
+    const ro = new ResizeObserver(() => {
+      const r = el.getBoundingClientRect()
+      setSize({ w: r.width, h: r.height })
+    })
+
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!canvas || size.w === 0 || size.h === 0) return
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
     const dpr = window.devicePixelRatio || 1
-    canvas.width = Math.floor(canvasW * dpr)
-    canvas.height = Math.floor(canvasH * dpr)
-    canvas.style.width = `${canvasW}px`
-    canvas.style.height = `${canvasH}px`
-    drawGrid(ctx, blocksById, usersById, userID, hoveredCellRef.current, dpr)
-  }, [blocksById, usersById, canvasW, canvasH, userID])
+    canvas.width = Math.floor(size.w * dpr)
+    canvas.height = Math.floor(size.h * dpr)
+    canvas.style.width = "100%"
+    canvas.style.height = "100%"
+
+    drawGrid(ctx, blocksById, usersById,userColor, userID, hoveredCellRef.current, dpr)
+  }, [blocksById, usersById, userID, size.w, size.h])
 
   useEffect(() => {
     draw()
@@ -79,7 +91,7 @@ export default function MagicBoard({ status, blocksById, usersById, claimCell }:
       block
         ? `(${key}) owned by ${username || block.userID.slice(0, 8)}`
         : `(${key}) unclaimed`,
-      { id: "hover-cell", duration: 900 }
+      { id: "hover-cell", duration: 1000 }
     )
   }
 
@@ -87,7 +99,6 @@ export default function MagicBoard({ status, blocksById, usersById, claimCell }:
     hoveredCellRef.current = null
     lastHoverKeyRef.current = null
     toast.dismiss("hover-cell")
-    draw()
   }
 
   const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -98,32 +109,32 @@ export default function MagicBoard({ status, blocksById, usersById, claimCell }:
     if (!cell) return
 
     const blockID = `${cell.row},${cell.col}`
-    const block = blocksById[blockID]
-    if (block && block.userID !== userID) return
 
-    claimCell(blockID, userID)
+    claimCell(blockID, userID, userName , userColor)
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader className="border-b">
-        <CardTitle>Magic Board</CardTitle>
-        <CardDescription>
-          500 cells ({ROWS}×{COLS}) · Status: {status}
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent className="p-4">
-        <div className="overflow-auto rounded-md ring-1 ring-foreground/10">
+    
+        <div ref={containerRef} className="w-full h-full">
+          {status !== "connected" && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur">
+              <div className="text-center">
+                <p className="text-lg font-medium">
+                  {status === "connecting" ? "Connecting..." : "Disconnected"}
+                </p>
+              </div>
+            </div>
+          )}
           <canvas
             ref={canvasRef}
+            data-click-sound
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             onClick={handleClick}
             style={{ display: "block" }}
+            className="p-2 mx-auto max-w-full h-full overflow-y-auto cursor-pointer"
           />
         </div>
-      </CardContent>
-    </Card>
+    
   )
 }

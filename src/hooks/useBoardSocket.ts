@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { WS_URL } from "../lib/ws"
 import { useUser } from "../../Context/UserContext";
+import { toast } from "sonner";
 
 export type Block = { blockID: string; userID: string; timestamp: number }
 export type LeaderboardEntry = { userID: string; count: number }
@@ -94,6 +95,7 @@ export function useBoardSocket(wsUrl: string = WS_URL) {
           return
         case "RATE_LIMIT_EXCEEDED":
           setRateLimitMessage(msg.payload.message)
+          toast.error(msg.payload.message)
           return
         case "USER_PROFILE_UPDATED":
           setUsersById((prev) => ({
@@ -128,12 +130,12 @@ export function useBoardSocket(wsUrl: string = WS_URL) {
     }
   }, [connect])
 
-  const claimCell = useCallback((blockID: string, userID: string) => {
+  const claimCell = useCallback((blockID: string, userID: string , username: string , color : string) => {
     const socket = wsRef.current
     if (!socket || socket.readyState !== WebSocket.OPEN) return
     socket.send(JSON.stringify({
       type: "CLAIM_BLOCK",
-      payload: { blockID, userID, username: userName, color: userColor },
+      payload: { blockID, userID, username, color },
     }))
   }, [userName, userColor])
 

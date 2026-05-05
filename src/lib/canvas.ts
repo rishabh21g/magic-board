@@ -1,4 +1,4 @@
-import { CELL_GAP, CELL_SIZE, COLORS, COLS, ROWS, STRIDE } from "../constants/grid"
+import { CELL_GAP, CELL_SIZE, COLS, ROWS, STRIDE } from "../constants/grid"
 import type { UsersById } from "../hooks/useBoardSocket"
 
 const FALLBACK_OWNED = "#22c55e"
@@ -16,11 +16,11 @@ export function drawGrid(
   ctx: CanvasRenderingContext2D,
   blocksById: Record<string, { blockID: string; userID: string; timestamp: number }>,
   usersById: UsersById,
+  userColor : string,
   myUserID: string,
   hoveredCell: { row: number; col: number } | null,
   dpr: number
 ) {
-  // (recommended) set transform once
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
   // then use W/H in CSS units
@@ -28,8 +28,11 @@ export function drawGrid(
   const H = ROWS * STRIDE - CELL_GAP
   ctx.clearRect(0, 0, W, H)
 
-  // Background
-  ctx.fillStyle = COLORS.surface
+  const theme = getTheme(ctx.canvas)
+  ctx.fillStyle = theme.background
+  ctx.fillRect(0, 0, W, H)
+
+  ctx.fillStyle = theme.card
   ctx.fillRect(0, 0, W, H)
 
   for (let row = 0; row < ROWS; row++) {
@@ -41,7 +44,6 @@ export function drawGrid(
       const cellKey = `${row},${col}`
       const block = blocksById[cellKey]
       const isHovered = hoveredCell?.row === row && hoveredCell?.col === col
-      const isFlash = false
 
       if (block) {
         const color = getUserColor(block.userID, usersById)
@@ -51,35 +53,36 @@ export function drawGrid(
         ctx.save()
         ctx.beginPath()
         roundRect(ctx, x, y, pw, ph, 3)
-        ctx.fillStyle = isMe
-          ? isFlash ? COLORS.goldBright : "rgba(200,168,75,0.22)"
-          : hexToRgba(color, isFlash ? 0.7 : 0.18)
-        ctx.fill()
 
-        // Border
-        ctx.strokeStyle = isMe
-          ? isFlash ? COLORS.goldBright : "rgba(200,168,75,0.6)"
-          : hexToRgba(color, 0.55)
-        ctx.lineWidth = isMe ? 1.5 : 1
-        ctx.stroke()
-
-        // Inner shimmer for "mine"
         if (isMe) {
-          const grad = ctx.createLinearGradient(x, y, x + pw, y + ph)
-          grad.addColorStop(0, "rgba(200,168,75,0.18)")
-          grad.addColorStop(1, "rgba(200,168,75,0.0)")
-          ctx.fillStyle = grad
+          withAlpha(ctx, 0.18, () => {
+            ctx.fillStyle = userColor || theme.primary
+            ctx.fill()
+          })
+
+          withAlpha(ctx, 0.6, () => {
+            ctx.strokeStyle = usersById[myUserID].color || theme.primary
+            ctx.lineWidth = 1.5
+            ctx.stroke()
+          })
+        } else {
+          ctx.fillStyle = hexToRgba(color, 0.18)
           ctx.fill()
+
+          ctx.strokeStyle = hexToRgba(color, 0.55)
+          ctx.lineWidth = 1
+          ctx.stroke()
         }
+
         ctx.restore()
       } else {
         // Empty cell
         ctx.save()
         ctx.beginPath()
         roundRect(ctx, x, y, pw, ph, 3)
-        ctx.fillStyle = isHovered ? "rgba(200,168,75,0.1)" : COLORS.emptyCell
+        ctx.fillStyle = isHovered ? theme.muted : theme.card
         ctx.fill()
-        ctx.strokeStyle = isHovered ? "rgba(200,168,75,0.4)" : COLORS.emptyBorder
+        ctx.strokeStyle = isHovered ? theme.ring : theme.border
         ctx.lineWidth = 1
         ctx.stroke()
         ctx.restore()
@@ -89,10 +92,10 @@ export function drawGrid(
       if (isHovered && !block) {
         ctx.save()
         ctx.shadowBlur = 12
-        ctx.shadowColor = COLORS.gold
+        ctx.shadowColor = theme.primary
         ctx.beginPath()
         roundRect(ctx, x, y, pw, ph, 3)
-        ctx.strokeStyle = COLORS.goldDim
+        ctx.strokeStyle = theme.primary
         ctx.lineWidth = 1.5
         ctx.stroke()
         ctx.restore()
@@ -119,4 +122,26 @@ function hexToRgba(hex: string, alpha: number): string {
   const g = parseInt(hex.slice(3, 5), 16)
   const b = parseInt(hex.slice(5, 7), 16)
   return `rgba(${r},${g},${b},${alpha})`
+}
+
+function withAlpha(ctx: CanvasRenderingContext2D, alpha: number, fn: () => void) {
+  ctx.save()
+  ctx.globalAlpha = alpha
+  fn()
+  ctx.restore()
+}
+
+function cssVar(el: Element, name: string) {
+  return getComputedStyle(el).getPropertyValue(name).trim()
+}
+
+function getTheme(el: Element) {
+  return {
+    background: cssVar(el, "--background"),
+    card: cssVar(el, "--card"),
+    border: cssVar(el, "--border"),
+    muted: cssVar(el, "--muted"),
+    ring: cssVar(el, "--ring"),
+    primary: cssVar(el, "--primary"),
+  }
 }

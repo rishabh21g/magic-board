@@ -2,23 +2,16 @@ import { useEffect, useState } from "react"
 import { useUser } from "../../Context/UserContext"
 
 import { Button } from "./ui/button"
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "./ui/dialog"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card"
 import { Field, FieldGroup } from "./ui/field"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 
-export function UserPreferenceDialog(props: {
-  onProfileUpdated?: (userID: string, username: string, color: string) => void
-}) {
+function isValidHex6(value: string) {
+  return /^#([0-9a-fA-F]{6})$/.test(value.trim())
+}
+
+export function UserPreferenceCard() {
   const { userName, setUserName, userColor, setUserColor, userID } = useUser()
 
   const [draftName, setDraftName] = useState(userName)
@@ -27,34 +20,18 @@ export function UserPreferenceDialog(props: {
   useEffect(() => setDraftName(userName), [userName])
   useEffect(() => setDraftColor(userColor), [userColor])
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const username = draftName.trim()
-    const color = draftColor.trim()
-
-    setUserName(username)
-    setUserColor(color)
-
-    props.onProfileUpdated?.(userID, username, color)
-  }
-
-  const safeColor = /^#([0-9a-fA-F]{6})$/.test(draftColor) ? draftColor : "#22c55e"
+  const safeColor = isValidHex6(draftColor) ? draftColor.trim() : "#22c55e"
 
   return (
-    <Dialog>
-      <form onSubmit={onSubmit}>
-        <DialogTrigger asChild>
-          <Button variant="outline">Edit profile</Button>
-        </DialogTrigger>
+    <Card className="w-80 shrink-0" size="sm">
+        <CardHeader className="border-b">
+          <CardTitle>Profile</CardTitle>
+          <CardDescription>
+            Update anytime. Saved locally. (Your ID is {userID.slice(0, 8)}…)
+          </CardDescription>
+        </CardHeader>
 
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Edit profile</DialogTitle>
-            <DialogDescription>
-              Saved locally on this device. (Your ID is {userID.slice(0, 8)}…)
-            </DialogDescription>
-          </DialogHeader>
-
+        <CardContent className="space-y-4">
           <FieldGroup>
             <Field>
               <Label htmlFor="username">Username</Label>
@@ -85,17 +62,14 @@ export function UserPreferenceDialog(props: {
               </div>
             </Field>
           </FieldGroup>
+        </CardContent>
 
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" type="button">
-                Cancel
-              </Button>
-            </DialogClose>
-            <Button type="submit">Save changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </form>
-    </Dialog>
+        <CardFooter className="border-t justify-end">
+          <Button type="submit" onClick={()=>{
+            setDraftName(draftName)
+            setUserColor(draftColor)
+          }}>Save</Button>
+        </CardFooter>
+    </Card>
   )
 }
