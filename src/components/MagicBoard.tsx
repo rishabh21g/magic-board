@@ -1,9 +1,10 @@
+import { CELL_SIZE, COLS, ROWS, STRIDE } from "@/constants/grid";
+import type { Block, UsersById } from "@/hooks/useBoardSocket";
 import { useCallback, useEffect, useRef, useState } from "react"
-import { toast } from "sonner"
-import type { Block, UsersById } from "../hooks/useBoardSocket"
-import { drawGrid } from "../lib/canvas"
-import {CELL_SIZE, COLS, ROWS, STRIDE } from "../constants/grid"
-import { useUser } from "../../Context/UserContext"
+import { useUser } from "../../Context/UserContext";
+import { drawGrid } from "@/lib/canvas";
+import { toast } from "sonner";
+
 
 type Props = {
   status: "connecting" | "connected" | "disconnected"

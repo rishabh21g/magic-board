@@ -1,11 +1,12 @@
 import { useEffect } from "react"
-import LeaderBoard from "./components/LeaderBoard"
-import MagicBoard from "./components/MagicBoard"
-import { Button } from "./components/ui/button"
-import { Separator } from "./components/ui/separator"
-import { UserPreferenceCard } from "./components/UserPrerference"
-import { useBoardSocket } from "./hooks/useBoardSocket"
-import MagicData from "./components/MagicData"
+import { useBoardSocket } from "./hooks/useBoardSocket";
+import { Button } from "./components/ui/button";
+import { Separator } from "./components/ui/separator";
+import MagicBoard from "./components/MagicBoard";
+import LeaderBoard from "./components/LeaderBoard";
+import { UserPreferenceCard } from "./components/UserPrerference";
+import MagicData from "./components/MagicData";
+
 
 export default function App() {
 

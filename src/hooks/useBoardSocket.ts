@@ -1,7 +1,8 @@
+import { WS_URL } from "@/lib/ws";
 import { useCallback, useEffect, useRef, useState } from "react"
-import { WS_URL } from "../lib/ws"
 import { useUser } from "../../Context/UserContext";
 import { toast } from "sonner";
+
 
 export type Block = { blockID: string; userID: string; timestamp: number }
 export type LeaderboardEntry = { userID: string; count: number }

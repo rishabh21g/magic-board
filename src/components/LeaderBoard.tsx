@@ -1,8 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
-import type { LeaderboardEntry, UsersById } from "../hooks/useBoardSocket"
 import { getUserColor } from "../lib/canvas"
 import { useUser } from "../../Context/UserContext"
 import { Separator } from "./ui/separator"
+import type { LeaderboardEntry, UsersById } from "@/hooks/useBoardSocket";
 
 type Props = {
   status: "connecting" | "connected" | "disconnected"

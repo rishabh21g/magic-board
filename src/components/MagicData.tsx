@@ -1,8 +1,9 @@
 // src/components/MagicData.tsx
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
-import { COLS, ROWS } from "../constants/grid"
-import { useUser } from "../../Context/UserContext"
-import type { Block } from "../hooks/useBoardSocket"
+
+import type { Block } from "@/hooks/useBoardSocket";
+import { useUser } from "../../Context/UserContext";
+import { COLS, ROWS } from "@/constants/grid";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 
 type Props = {
   blocksById: Record<string, Block>

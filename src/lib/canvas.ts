@@ -1,5 +1,6 @@
-import { CELL_GAP, CELL_SIZE, COLS, ROWS, STRIDE } from "../constants/grid"
-import type { UsersById } from "../hooks/useBoardSocket"
+import { CELL_GAP, CELL_SIZE, COLS, ROWS, STRIDE } from "@/constants/grid";
+import type { UsersById } from "@/hooks/useBoardSocket";
+
 
 const FALLBACK_OWNED = "#22c55e"
 function normalizeHexColor(maybe: string | undefined) {
