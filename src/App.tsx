@@ -5,30 +5,30 @@ import { Button } from "./components/ui/button"
 import { Separator } from "./components/ui/separator"
 import { UserPreferenceCard } from "./components/UserPrerference"
 import { useBoardSocket } from "./hooks/useBoardSocket"
-import { getClickSound } from "./lib/click"
+import MagicData from "./components/MagicData"
 
 export default function App() {
 
   const board = useBoardSocket()
- 
+  const CLICK_SOUND = "public/mouse-click.mp3"
+  console.log(CLICK_SOUND)
+  let clickSound: HTMLAudioElement | null = null
+
+  function getClickSound() {
+    if (clickSound) return clickSound
+    clickSound = new Audio(CLICK_SOUND)
+    clickSound.preload = "auto"
+    clickSound.volume = 1
+    return clickSound
+  }
+
   useEffect(() => {
     const onPointerDown = (e: PointerEvent) => {
-      if (e.button !== 0) return; 
+      if (e.button !== 0) return;
       const target = e.target as Element | null;
       if (!target) return;
 
-      const hit = target.closest(
-        [
-          '[data-slot="button"]',
-          'button',
-          '[role="button"]',
-          'input[type="button"]',
-          'input[type="submit"]',
-          '[data-slot="dropdown-menu-trigger"]',
-          '[data-slot="dropdown-menu-item"]',
-          "canvas",
-        ].join(",")
-      );
+      const hit = target.closest("canvas");
       if (!hit) return;
 
       if ((hit as HTMLElement).hasAttribute("data-disabled")) return;
@@ -36,7 +36,7 @@ export default function App() {
 
       const audio = getClickSound();
       audio.currentTime = 0;
-      audio.play().catch(() => {});
+      audio.play().catch(() => { });
     };
 
     window.addEventListener("pointerdown", onPointerDown, true);
@@ -48,6 +48,15 @@ export default function App() {
     <div className="min-h-screen bg-background text-foreground dark flex flex-col">
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+          <div className="min-w-0">
+            <h1 className="truncate font-heading text-lg font-semibold leading-none">
+              Magic Board
+            </h1>
+            <p className="truncate text-xs text-muted-foreground">
+              Claim cells • Compete on the leaderboard
+            </p>
+          </div>
+
           <div className="flex items-center gap-2 justify-center">
             <Button asChild variant="outline">
               <a
@@ -74,8 +83,9 @@ export default function App() {
         </div>
 
         <div className="w-80 shrink-0 flex flex-col gap-4">
-          <LeaderBoard status={board.status} leaderboard={board.leaderboard} usersById={board.usersById}/>
+          <LeaderBoard status={board.status} leaderboard={board.leaderboard} usersById={board.usersById} />
           <UserPreferenceCard />
+          <MagicData blocksById={board.blocksById} />
         </div>
       </main>
     </div>

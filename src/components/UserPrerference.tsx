@@ -66,7 +66,7 @@ export function UserPreferenceCard() {
 
         <CardFooter className="border-t justify-end">
           <Button type="submit" onClick={()=>{
-            setDraftName(draftName)
+            setUserName(draftName)
             setUserColor(draftColor)
           }}>Save</Button>
         </CardFooter>
